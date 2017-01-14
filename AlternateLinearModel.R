@@ -1,32 +1,11 @@
-# functions
-
-# # data preparation --------------------------------------------------------
-# seed = 100
-# num = 1000
-# dim = 2
-# dim_extra = 2
-# 
-# set.seed(seed)
-# 
-# X <- matrix(rnorm(num * (dim + dim_extra)), num, dim + dim_extra)
-# colnames(X) <-paste0("feature",1:NCOL(X))
-# for (i in 1:dim_extra){
-#   X[, dim + i] <- X[, 1] + 0.5 * rnorm(num)
-# }
-# y <- X[, 1] + 0.3 * X[, 2] + 0.5 * rnorm(num)
-#
-# #
-#
-# X=matrix(rnorm(100*20),100,20)
-# y=rnorm(100)
-# X <- read.csv(file = "X.csv", header = FALSE) %>% as.matrix()
-# str(X)
-# 
-# y <- read.csv(file = "y.csv", header = FALSE) %>% as.matrix()
-# str(y)
-
-# GGally::ggpairs(X %>% as.data.frame())
-# internal functions ------------------------------------------------------
+#' Same function as 'catf()' in BBmisc except for returning [str]
+#'
+#' @param ...     See sprintf
+#' @param file    See cat. Default is ""
+#' @param append  See cat. Default is FALSE.
+#' @param newline Append newline at the end? Default is TRUE.
+#'
+#' @export
 
 catf <- function (..., file = "", append = FALSE, newline = TRUE)
 {
@@ -35,6 +14,15 @@ catf <- function (..., file = "", append = FALSE, newline = TRUE)
       sep = "", file = file, append = append)
   invisible(msg)
 }
+
+
+#' partial function for Lasso model
+#'
+#' @description internal
+#' @param x  [matrix]    Desgin matrix
+#' @param y  [vector]    Response valuables
+#' @param a  [vector]    Coeffcients.
+#' @param b  [numeric]   an intercept
 
 getP <- function(x, y, a, b){
   n.obs <- NROW(y)
@@ -47,6 +35,15 @@ getP <- function(x, y, a, b){
   return(p)
 }
 
+
+#' Objective function of regularized linear model
+#'
+#' @description internal
+#' @param x  [matrix]    Desgin matrix
+#' @param y  [vector]    Response valuables
+#' @param a  [vector]    Coeffcients.
+#' @param b  [numeric]   an intercept
+
 getObjective <- function(x, y, a, b, rho){
   z <- x %*% a + b
   f <- mean((y - z)^2) / 2
@@ -54,8 +51,50 @@ getObjective <- function(x, y, a, b, rho){
 }
 
 
+#' Alternate Lasso Feature Selection
+#'
+#' R package for the alternate features search proposed in the following paper.
+#' S. Hara, T. Maehara, Finding Alternate Features in Lasso, arXiv:1611.05940, 2016.
+#' Complete and original Python code is available from https://github.com/sato9hara/LassoVariants
+#'
+#' @name AlternateLasso
+#'
+#' @param X            [matrix] Desgin matrix
+#' @param y            [vector] Response valuables
+#' @param model        \code{\link{glmnet}} class object.
+#' @param rho          [numeric] Cut-off value. See \code{lambda} of \code{\link{glmnet}}
+#' @param featurename  [character vector] If NULL, set colnames(X)
+#' @param verbose      Show message during fit. default is \code{TRUE.}
+#'
+#' @return             "AlternateLasso" class object. A list of original model and alternative features.
+#'
+#' @examples
+#' # data preparation
+#' num = 1000
+#' dim = 2
+#' dim_extra = 2
+#'
+#' set.seed(123)
+#' X <- matrix(rnorm(num * (dim + dim_extra)), num, dim + dim_extra)
+#' colnames(X) <-paste0("feature",1:NCOL(X))
+#' for (i in 1:dim_extra){
+#'   X[, dim + i] <- X[, 1] + 0.5 * rnorm(num)
+#' }
+#' y <- X[, 1] + 0.3 * X[, 2] + 0.5 * rnorm(num)
+#'
+#' # fit lasso model
+#' require(glmnet)
+#' fit1 <- glmnet(X,y)
+#'
+#' # fit Alternate Lasso model
+#' alt1 <- AlternateLasso(X, y, model = fit1, rho = 0.1)
+#'
+#' print(alt1)
+#' g <- plot(alt1)
+#' g
+#'
+#' @export
 
-# alternative lasso --------------------------------------------------------
 require(foreach)
 AlternateLasso <- function(X, y, model = NULL, rho = 0.1, featurename = NULL, verbose = TRUE){
 
@@ -129,16 +168,12 @@ AlternateLasso <- function(X, y, model = NULL, rho = 0.1, featurename = NULL, ve
 
   return(result)
 }
-# 
-# X2 <- X
-# 
-# head(X)
-# fit1 <- glmnet::glmnet(X,y)
-# str(fit1)
-# coef(fit1,s=0.10)
-# alt1 <- AlternateLasso(X, y, model = fit1, rho = 0.1)
 
-# print.AlternativeLasso --------------------------------------------------
+
+#' print.AlternateLasso
+#'
+#' @rdname AlternateLasso
+#' @export
 
 print.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
@@ -157,16 +192,16 @@ print.AlternateLasso <- function(obj){
     }
   }
 }
-# 
-# print(alt1)
-# 
-# str(alt1$model)
-# 
 
-# plot.AlternativeLasso ---------------------------------------------------
-# convert from Alternate Lasso object to data.frame
+#' convert from Alternate Lasso object to data.frame
+#'
+#' @param obj    "AlternateLasso" class object.
+#' @return data.frame
+#' @examples
+#' #not run
+#' convertDF.AlternateLasso(alt1)
+
 require(foreach)
-
 convertDF.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
 
@@ -179,12 +214,25 @@ convertDF.AlternateLasso <- function(obj){
   }
   return(df)
 }
-# convertDF.AlternateLasso(alt1)
 
 
-# plot bipartite data.frame
+#' Plot Bipartite Graph Vertically
+#'
+#'
+#' @param left     [vector] Nodes on the left side
+#' @param right    [vector] Nodes on the right side
+#'
+#' @return \code{\link{igraph}} object
+#'
+#' @examples
+#' from <- c("A", "A", "A", "B", "B", "B", "B", "C")
+#' to   <- c(1, 1, 2, 3, 1, 4, 1, 2)
+#' plotVerticalBipartiteGraph(left = from, right = to)
+#'
+#' @import  igraph
+#' @export
+
 require(igraph)
-
 plotVerticalBipartiteGraph <- function(left, right){
   df <- data.frame(left, right)
   labs.left  <- unique(df[, 1])
@@ -209,7 +257,11 @@ plotVerticalBipartiteGraph <- function(left, right){
 }
 
 
-# plot.AlternateLasso
+#' plot.AlternateLasso
+#'
+#' @rdname AlternateLasso
+#' @export
+
 plot.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
   this <- convertDF.AlternateLasso(obj)
@@ -217,6 +269,3 @@ plot.AlternateLasso <- function(obj){
   invisible(g)
 }
 
-# 
-# g <- plot(alt1)
-# class(g)

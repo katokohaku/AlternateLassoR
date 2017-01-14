@@ -16,6 +16,7 @@ for (i in 1:dim_extra){
   X[, dim + i] <- X[, 1] + 0.5 * rnorm(num)
 }
 y <- X[, 1] + 0.3 * X[, 2] + 0.5 * rnorm(num)
+GGally::ggpairs(as.data.frame(X))
 
 # fit lasso model
 require(glmnet)
