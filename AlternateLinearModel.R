@@ -209,10 +209,15 @@ convertDF.AlternateLasso <- function(obj){
 
     LL <- obj$alternatives[[i]]
     foreach::foreach(i = seq_len(NROW(LL$alt)), .combine = rbind) %do% {
-      data.frame(feature = LL$feature, alt = LL$alt$feature[i])
+      data.frame(feature = LL$feature, alt = LL$alternatives$feature[i],
+                 score = LL$objective - LL$alternatives$objective[i])
     }
   }
-  return(df)
+  sorted.fname <- table(df$feature) %>% data.frame %>% arrange(desc(Freq))
+  sorted.df <- foreach(fname = sorted.fname$Var1, .combine=rbind) %do% {
+    df.this <- df %>% filter(feature == fname) %>% arrange(score)
+  }
+  return(sorted.df)
 }
 
 
@@ -229,7 +234,7 @@ convertDF.AlternateLasso <- function(obj){
 #' to   <- c(1, 1, 2, 3, 1, 4, 1, 2)
 #' plotVerticalBipartiteGraph(left = from, right = to)
 #'
-#' @import  igraph
+#' @import  igraph, RColorBrewer
 #' @export
 
 require(igraph)
@@ -244,9 +249,12 @@ plotVerticalBipartiteGraph <- function(left, right){
 
   V(g)$y <- c(seq(from=NROW(labs.right), to=1, length.out=NROW(labs.left)),
               NROW(labs.right):1)
-  cols <-  palette()
+  
+  n <- NROW(labs.left)
+  if(n < 3){ n <- 3 }
+  cols <-  c(RColorBrewer::brewer.pal(n, name="Set1"))
   for(i in seq_len(NROW(labs.left))){
-    E(g)$color[E(g)[labs.left[i] %--% V(g)]] <- cols[i + 1]
+    E(g)$color[E(g)[labs.left[i] %--% V(g)]] <- cols[i]
   }
 
   V(g)$size <- 0
@@ -260,11 +268,13 @@ plotVerticalBipartiteGraph <- function(left, right){
 #' plot.AlternateLasso
 #'
 #' @rdname AlternateLasso
+#' @import  dplyr
 #' @export
 
 plot.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
   this <- convertDF.AlternateLasso(obj)
+  
   g <- plotVerticalBipartiteGraph(left = this$feature, right = this$alt)
   invisible(g)
 }
