@@ -117,9 +117,6 @@ AlternateLasso <- function(X, y, model = NULL, rho = 0.1, featurename = NULL, ve
   p <- getP(X, y, coeffs.orig, b)
   q <- colMeans(X^2)
 
-  if(verbose){
-    print('> [feature name, # of alternate feature candidates]')
-  }
   alternatives <- foreach(d = nonzeros) %do% {
 
     coeffs.this <- coeffs.orig
@@ -177,18 +174,33 @@ AlternateLasso <- function(X, y, model = NULL, rho = 0.1, featurename = NULL, ve
 
 print.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
+  
+  for(i in 1:NROW(obj$alternatives)){
+    this <- obj$alternatives[[i]]
+    catf("[ %s ] has [ %d ] alternatives", this$feature,  NROW(this$alternatives))
+  }
+}
+
+
+#' summary.AlternateLasso
+#'
+#' @rdname AlternateLasso
+#' @export
+
+summary.AlternateLasso <- function(obj){
+  stopifnot(any(class(obj) ==  "AlternateLasso"))
 
   for(i in 1:NROW(obj$alternatives)){
     this <- obj$alternatives[[i]]
-    catf("Feature: %s, Coef. = %f", this$feature, this$coef)
+    catf("Feature: [ %s ], Coef. = %f, Aiternative: %i", this$feature, this$coef, NROW(this$alternatives))
     if(is.null(this$alternatives)){
       catf("\t ** No Alternate Features **")
     }
 
     for(j in 1:NROW(this$alternatives)){
       this.alt <- this$alternatives[j, ]
-      catf("\t Alternate Feature: %s, Score = %f, Coef. = %f",
-           this.alt$feature, this.alt$objective - this$objective, this$coef)
+      catf("\t Alternate Feature: %s, Coef. = %f, Score = %f",
+           this.alt$feature, this.alt$coef, this.alt$objective - this$objective)
     }
   }
 }
@@ -197,11 +209,15 @@ print.AlternateLasso <- function(obj){
 #'
 #' @param obj    "AlternateLasso" class object.
 #' @return data.frame
+#' 
+#' @import  foreach, dplyr
+#' 
 #' @examples
 #' #not run
 #' convertDF.AlternateLasso(alt1)
 
 require(foreach)
+require(dplyr)
 convertDF.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
 
@@ -210,7 +226,7 @@ convertDF.AlternateLasso <- function(obj){
     LL <- obj$alternatives[[i]]
     foreach::foreach(i = seq_len(NROW(LL$alt)), .combine = rbind) %do% {
       data.frame(feature = LL$feature, alt = LL$alternatives$feature[i],
-                 score = LL$objective - LL$alternatives$objective[i])
+                 score = LL$alternatives$objective[i] - LL$objective)
     }
   }
   sorted.fname <- table(df$feature) %>% data.frame %>% arrange(desc(Freq))
@@ -276,6 +292,6 @@ plot.AlternateLasso <- function(obj){
   this <- convertDF.AlternateLasso(obj)
   
   g <- plotVerticalBipartiteGraph(left = this$feature, right = this$alt)
-  invisible(g)
+  invisible(list(df = this, graph = g))
 }
 
