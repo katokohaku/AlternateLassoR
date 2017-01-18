@@ -12,8 +12,7 @@ y <- boston.sc[, 14]
 # write.table(X, "bostonX.csv", row.names = F, col.names = F, sep=",")
 # write.table(y, "bostonY.csv", row.names = F, col.names = F, sep=",")
 
-
-# fit lasso model with cross-validation
+# estimate lambda of lasso using cross-validation
 require(glmnet)
 fit1.cv <- cv.glmnet(X, y)
 plot(fit1.cv)
@@ -22,13 +21,12 @@ plot(cv.glmnet(X, y))
 lambda.min <- fit1.cv$lambda.min
 lambda.1se <- fit1.cv$lambda.1se
 
-str(fit1.cv)
+# str(fit1.cv)
 fit1 <- glmnet(X,y)
 plot.glmnet(fit1, xvar = "lambda")
 abline(v=log(lambda.min), col="red", lty=3)
 abline(v=log(lambda.1se), col="blue", lty=3)
 abline(v=log(0.07),       col="green", lty=3)
-
 
 # fit lasso model
 fit1 <- glmnet(X,y)
@@ -36,12 +34,12 @@ coef(fit1, lambda.1se)
 
 # fit Alternate Lasso model
 alt1 <- AlternateLasso(X, y, model = fit1, rho = lambda.1se)
+str(alt1)
 summary(alt1)
-
-# str(alt1)
 
 g <- plot(alt1)
 g$graph
+g$df
 
 
 # compare Alternate score to correlation ----------------------------------
