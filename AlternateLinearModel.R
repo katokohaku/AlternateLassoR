@@ -27,7 +27,7 @@ catf <- function (..., file = "", append = FALSE, newline = TRUE)
 getP <- function(x, y, a, b){
   n.obs <- NROW(y)
   p <- - t(x) %*% (y - b) / n.obs # getH() in original code
-
+  
   for(d in which(abs(a) > 0)){
     g <- t(x) %*% x[, d] / n.obs # getG() in original code
     p <- p + g * a[d]
@@ -43,6 +43,12 @@ getP <- function(x, y, a, b){
 #' @param y  [vector]    Response valuables
 #' @param a  [vector]    Coeffcients.
 #' @param b  [numeric]   an intercept
+
+
+# def __getObj(self, x, y, a, b):
+#   z = x.dot(a) + b
+# f = np.mean(np.log(1 + np.exp(- (2 * y - 1) * z)))
+# return f + self.rho_ * np.sum(np.abs(a))
 
 getObjective <- function(x, y, a, b, rho){
   z <- x %*% a + b
@@ -97,72 +103,88 @@ getObjective <- function(x, y, a, b, rho){
 
 require(foreach)
 AlternateLasso <- function(X, y, model = NULL, rho = 0.1, featurename = NULL, verbose = TRUE){
-
+  
   stopifnot(
     !missing(X), !missing(y), !is.null(model),
     any(class(model) ==  "glmnet"))
-
+  
+  if(!is.null(featurename)){
+    colnames(X) <- featurename
+  } 
+  
   featurename <- colnames(X)
   if(is.null(featurename)){
     featurename <- paste0("X",1:NCOL(X))
-  }
-
+  } 
+  
   # original coefficients by lasso
   coeffs.orig <- as.numeric(coef(model, s=rho))[-1]
   # Intercept
   b <- as.numeric(coef(model, s=rho))[1]
+  # objective function value of original lasso model
+  obj.orig <- getObjective(X, y, coeffs.orig, b, rho)
+  
   nonzeros <- which(abs(coeffs.orig) > 0)
-
+  
   # iterative search for alternative features of non-zero features
   p <- getP(X, y, coeffs.orig, b)
+  # print("p"); print(p)
   q <- colMeans(X^2)
-
+  # print("q"); print(q)
+  
   alternatives <- foreach(d = nonzeros) %do% {
-
+    
     coeffs.this <- coeffs.orig
     coeffs.this[d] <- 0
     obj0 <- getObjective(X, y, coeffs.this, b, rho)
-
-
+    
+    
     g <- t(X) %*% X[, d] / NROW(X) # getG() in original code
     pp <- p - g * coeffs.orig[d] # remove effect of the target coeffcient.
-
+    
     # soft-thresholding operator
-    rr <- (abs(pp) - rho) / q
-    alt.coeffs <- sign(- rr) * ifelse(rr > 0, rr, 0)
+    r  <-  pp / q
+    rr <- abs(r) - rho / q
+    
+    alt.coeffs <- sign(- r) * ifelse(rr > 0, rr, 0)
     alt.coeffs[nonzeros] <- 0
     alt.coeffs[is.nan(alt.coeffs)] <- 0
     alt.coeffs # da
-
+    
     if(verbose){
       catf("[ %s ] has [ %d ] alternatives", featurename[d], sum(abs(alt.coeffs)>0))
     }
-
+    
     alt.this <- foreach(d.alt = which(abs(alt.coeffs) > 0), .combine=rbind) %do% {
       coeffs.this[d.alt] <- alt.coeffs[d.alt]
-
+      
       obj.tmp <- getObjective(X, y, coeffs.this, b, rho)
       coeffs.this[d.alt] <- 0
-
+      
       df <-data.frame(
         feature   = featurename[d.alt],
         coef      = alt.coeffs[d.alt] ,
         objective = obj.tmp,
         stringsAsFactors = FALSE)
-
+      
       return(df)
     }
-
+    
     list(
       feature = featurename[d],
       coef    = coeffs.orig[d],
       objective    = obj0,
       alternatives = alt.this)
   }
-
-  result <- list(model = model, alternatives = alternatives)
+  original <- list(
+    feature  = featurename, 
+    coef     = coeffs.orig,
+    objective= obj.orig
+  )
+  
+  result <- list(model = model, original = original, alternatives = alternatives)
   class(result) <- c(class(result), "AlternateLasso")
-
+  
   return(result)
 }
 
@@ -189,18 +211,19 @@ print.AlternateLasso <- function(obj){
 
 summary.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
-
+  
   for(i in 1:NROW(obj$alternatives)){
     this <- obj$alternatives[[i]]
     catf("Feature: [ %s ], Coef. = %f, Aiternative: %i", this$feature, this$coef, NROW(this$alternatives))
+    # catf("Obj0 = %f", this$objective)
     if(is.null(this$alternatives)){
       catf("\t ** No Alternate Features **")
     }
-
+    
     for(j in 1:NROW(this$alternatives)){
       this.alt <- this$alternatives[j, ]
-      catf("\t Alternate Feature: %s, Coef. = %f, Score = %f",
-           this.alt$feature, this.alt$coef, this.alt$objective - this$objective)
+      catf("\t Alternate Feature: %s, \tCoef. = %f, Score = %f",
+           this.alt$feature, this.alt$coef, this.alt$objective - obj$original$objective)
     }
   }
 }
@@ -220,25 +243,28 @@ require(foreach)
 require(dplyr)
 convertDF.AlternateLasso <- function(obj){
   stopifnot(any(class(obj) ==  "AlternateLasso"))
-
+  
   df <- foreach::foreach(i=seq_len(NROW(obj$alternatives)), .combine = rbind) %do% {
-
+    
     LL <- obj$alternatives[[i]]
     foreach::foreach(i = seq_len(NROW(LL$alt)), .combine = rbind) %do% {
       data.frame(feature = LL$feature, alt = LL$alternatives$feature[i],
-                 score = LL$alternatives$objective[i] - LL$objective)
+                 score = LL$alternatives$objective[i] - obj$original$objective)
     }
   }
-  sorted.fname <- table(df$feature) %>% data.frame %>% arrange(desc(Freq))
+  sorted.fname <- table(df$feature) %>% 
+    data.frame %>%
+    arrange(desc(Freq))
   sorted.df <- foreach(fname = sorted.fname$Var1, .combine=rbind) %do% {
-    df.this <- df %>% filter(feature == fname) %>% arrange(score)
+    df.this <- df %>% 
+      filter(feature == fname) %>% 
+      arrange(score)
   }
   return(sorted.df)
 }
 
 
 #' Plot Bipartite Graph Vertically
-#'
 #'
 #' @param left     [vector] Nodes on the left side
 #' @param right    [vector] Nodes on the right side
@@ -258,11 +284,11 @@ plotVerticalBipartiteGraph <- function(left, right){
   df <- data.frame(left, right)
   labs.left  <- unique(df[, 1])
   labs.right <- unique(df[, 2])
-
+  
   g <- graph_from_data_frame(unique(df), directed = FALSE)
-
+  
   V(g)$x <- c(rep(1, NROW(labs.left)), rep(2, NROW(labs.right)))
-
+  
   V(g)$y <- c(seq(from=NROW(labs.right), to=1, length.out=NROW(labs.left)),
               NROW(labs.right):1)
   
@@ -272,10 +298,10 @@ plotVerticalBipartiteGraph <- function(left, right){
   for(i in seq_len(NROW(labs.left))){
     E(g)$color[E(g)[labs.left[i] %--% V(g)]] <- cols[i]
   }
-
+  
   V(g)$size <- 0
   E(g)$curved <- FALSE
-
+  
   plot(g)
   invisible(g)
 }
@@ -284,7 +310,7 @@ plotVerticalBipartiteGraph <- function(left, right){
 #' plot.AlternateLasso
 #'
 #' @rdname AlternateLasso
-#' @import  dplyr
+#' @import dplyr
 #' @export
 
 plot.AlternateLasso <- function(obj){
@@ -294,4 +320,5 @@ plot.AlternateLasso <- function(obj){
   g <- plotVerticalBipartiteGraph(left = this$feature, right = this$alt)
   invisible(list(df = this, graph = g))
 }
+
 

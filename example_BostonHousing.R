@@ -9,9 +9,11 @@ boston.sc <- scale(Boston)
 X <- boston.sc[, -14]
 y <- boston.sc[, 14]
 # GGally::ggpairs(as.data.frame(boston.sc))
+# write.table(X, "bostonX.csv", row.names = F, col.names = F, sep=",")
+# write.table(y, "bostonY.csv", row.names = F, col.names = F, sep=",")
 
 
-# fit lasso model
+# fit lasso model with cross-validation
 require(glmnet)
 fit1.cv <- cv.glmnet(X, y)
 plot(fit1.cv)
@@ -29,14 +31,26 @@ abline(v=log(0.07),       col="green", lty=3)
 
 
 # fit lasso model
-require(glmnet)
 fit1 <- glmnet(X,y)
+coef(fit1, lambda.1se)
 
 # fit Alternate Lasso model
-alt1 <- AlternateLasso(X, y, model = fit1, rho = 0.07)
-
+alt1 <- AlternateLasso(X, y, model = fit1, rho = lambda.1se)
 summary(alt1)
-g <- plot(alt1)
 
-g$df
+# str(alt1)
+
+g <- plot(alt1)
 g$graph
+
+
+# compare Alternate score to correlation ----------------------------------
+m  <- cor(X)
+df <- cbind(g$df, cor=NA)
+for(i in 1:NROW(df)){
+  df$cor[i] <- m[as.character(df$feature[i]), as.character(df$alt[i])]
+}
+df$acor <- abs(df$cor)
+df
+write.csv(df, "cor_boston.csv")
+
