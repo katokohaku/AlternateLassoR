@@ -2,10 +2,3 @@
 .Rhistory
 .RData
 .Ruserdata
-doc
-<<<<<<< HEAD
-*.csv
-*.png
-=======
-cor_boston.csv
->>>>>>> e0f224e643bf64c5f717255e811355e2c379fce0
