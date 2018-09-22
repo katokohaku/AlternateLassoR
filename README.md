@@ -1,16 +1,8 @@
----
-title: "R package for for the alternate features search"
+# "R package for for the alternate features search"
+
 author: Satoshi Kato (@katokohaku)
-output: 
-  html_document:
-    keep_md: yes
-  md_document:
-    variant: markdown_github
----
 
-
-
-# Overview
+## Overview
 
 an implementation to R-package of for the alternate features search proposed in the following paper.
 
@@ -27,9 +19,9 @@ alt1 <- AlternateLasso(X, y, model = lasso.cv$glmnet.fit, rho = lasso.cv$lambda.
 plot(alt1, fontSize = 20)
 
 ```
-![](./img/sankeyflow.png)
+![example with Boston Housing Dataset](./img/sankeyflow.png)
 
-# Detail
+# Detail Examples
 
 ## Installation
 
@@ -45,8 +37,7 @@ devtools::install_github("katokohaku/AlternateLassoR")
 The source code for **AlternateLassoR** package is available on GitHub at
 - https://github.com/katokohaku/AlternateLassoR.
 
-## Examples
-### Data preparation
+## Data preparation
 
 In this regression example, [The Boston Housing Dataset](https://www.cs.toronto.edu/~delve/data/boston/bostonDetail.html) is used. This data set is included in MASS pachage.
 It is necessary to **standardize variables (scaling)** before using Lasso Regression because of constraints on the size of the coefficients associated to each variable, such as: 
@@ -64,7 +55,7 @@ X <- boston.sc[, -14]
 y <- boston.sc[, 14]
 ```
 
-### choose lambda of lasso based on cross-validation
+## Choosing lambda of lasso based on cross-validation
 
 In this example, `lambda.1se` is used instead of `lambda.min`, which gives **[the most regularized model](https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html)** such that error is within one standard error of the minimum, to preserve more alternative variables. 
 
@@ -102,7 +93,7 @@ coef.cv.glmnet(lasso.cv, s="lambda.1se")
 #> lstat       -4.032580e-01
 ```
 
-### fit Alternate Lasso model
+## Fit Alternate Lasso model
 
 Currently this package provides **only linear regression**. For classification tasks with logistic regression, refer to [the python code on author's github](https://github.com/sato9hara/LassoVariants/tree/master/AlternateLasso) of the original article.
 
@@ -172,7 +163,7 @@ summary(alt1)
 #> 	 Alternate Feature: tax, 	Coef. = -0.214304, Score = 0.058218
 ```
 
-### Visualize 
+## Visualize 
 `plots()` represents the connections from $\mathrm{var_{original}}$ (left side) to $\mathrm{var_{alternative}}$ (right side) and thier intensity (i.e. $score$ in original paper). Each width of flow corresponds to each score and is displayed as the logarithm of the inverse of its score: $\log_{10}(1 + 1/\mathrm{abs}(score))$. 
 
 A wider connection with an alternative indicates that the effect of variable replacement by the alternative could be less severe.
@@ -181,5 +172,5 @@ A wider connection with an alternative indicates that the effect of variable rep
 ```r
 plot(alt1, fontSize = 20)
 ```
-![](./img/sankeyflow.png)
+![example with Boston Housing Dataset](./img/sankeyflow.png)
 
