@@ -39,7 +39,7 @@ an implementation to R-package of for the alternate features search proposed in 
 
 * Complete and original Python code is available from [author's github](https://github.com/sato9hara/LassoVariants)
 
-```{r abstract}
+```{r abstract, eval=FALSE}
 # fit Alternate Lasso model
 lasso.cv <- glmnet::cv.glmnet(X, y)
 alt1 <- AlternateLasso(X, y, model = lasso.cv$glmnet.fit, rho = lasso.cv$lambda.1se, verbose = FALSE)
@@ -47,7 +47,7 @@ alt1 <- AlternateLasso(X, y, model = lasso.cv$glmnet.fit, rho = lasso.cv$lambda.
 plot(alt1, fontSize = 20)
 
 ```
-
+![](./img/sankeyflow.png)
 
 # Detail
 
@@ -113,9 +113,12 @@ summary(alt1)
 ```
 
 ### Visualize 
-`plots()` represents the connections from $\mathrm{var_{original}}$ (left side) to $\mathrm{var_{alternative}}$ (right side) and thier intensity (i.e. $score$ in original paper). Each width of flow corresponds to each score and is displayed as the logarithm of the inverse of its score: $\log_{10}(1 + 1/\mathrm{abs}(score))$. A wider connection with an alternative indicates that the effect of variable replacement by the alternative could be less severe.
+`plots()` represents the connections from $\mathrm{var_{original}}$ (left side) to $\mathrm{var_{alternative}}$ (right side) and thier intensity (i.e. $score$ in original paper). Each width of flow corresponds to each score and is displayed as the logarithm of the inverse of its score: $\log_{10}(1 + 1/\mathrm{abs}(score))$. 
 
-```{r plot}
+A wider connection with an alternative indicates that the effect of variable replacement by the alternative could be less severe.
+
+```{r plot, eval=FALSE}
 plot(alt1, fontSize = 20)
 ```
+![](./img/sankeyflow.png)
 

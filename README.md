@@ -25,11 +25,9 @@ lasso.cv <- glmnet::cv.glmnet(X, y)
 alt1 <- AlternateLasso(X, y, model = lasso.cv$glmnet.fit, rho = lasso.cv$lambda.1se, verbose = FALSE)
 
 plot(alt1, fontSize = 20)
+
 ```
-
-<!--html_preserve--><div id="htmlwidget-28082f302b348f14b357" style="width:672px;height:480px;" class="sankeyNetwork html-widget"></div>
-<script type="application/json" data-for="htmlwidget-28082f302b348f14b357">{"x":{"links":{"source":[0,0,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6,7,7,7,7],"target":[8,9,8,9,8,10,11,9,8,10,11,9,8,10,11,9,8,10,11,9,8,10,9,8,10,11,9],"value":[3.39043849121547,3.42517576424932,3.73167154847506,3.64845581609519,2.71532720246811,2.51329164717844,2.38154790705197,2.57924712046444,1.36750116459316,1.31506040908686,1.30353417024728,1.3342045248933,2.03595345768881,2.1020522212793,2.06266135664804,1.99958962776767,1.80693730455535,1.75500921419773,1.76827318261436,1.83344056518307,2.65865486297552,2.61054400692535,2.6752215031321,1.30431407038096,1.2737767368561,1.18700621998697,1.2589748481274],"group":["crim","crim","zn","zn","nox","nox","nox","nox","rm","rm","rm","rm","dis","dis","dis","dis","ptratio","ptratio","ptratio","ptratio","black","black","black","lstat","lstat","lstat","lstat"]},"nodes":{"name":["crim","zn","nox","rm","dis","ptratio","black","lstat","indus","tax","age","rad"],"group":["crim","zn","nox","rm","dis","ptratio","black","lstat","indus","tax","age","rad"]},"options":{"NodeID":"name","NodeGroup":"name","LinkGroup":"feature","colourScale":"d3.scaleOrdinal(d3.schemeCategory20);","fontSize":20,"fontFamily":null,"nodeWidth":15,"nodePadding":10,"units":"","margin":{"top":null,"right":null,"bottom":null,"left":null},"iterations":32,"sinksRight":true}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
-
+![](./img/sankeyflow.png)
 
 # Detail
 
@@ -175,13 +173,13 @@ summary(alt1)
 ```
 
 ### Visualize 
-`plots()` represents the connections from $\mathrm{var_{original}}$ (left side) to $\mathrm{var_{alternative}}$ (right side) and thier intensity (i.e. $score$ in original paper). Each width of flow corresponds to each score and is displayed as the logarithm of the inverse of its score: $\log_{10}(1 + 1/\mathrm{abs}(score))$. A wider connection with an alternative indicates that the effect of variable replacement by the alternative could be less severe.
+`plots()` represents the connections from $\mathrm{var_{original}}$ (left side) to $\mathrm{var_{alternative}}$ (right side) and thier intensity (i.e. $score$ in original paper). Each width of flow corresponds to each score and is displayed as the logarithm of the inverse of its score: $\log_{10}(1 + 1/\mathrm{abs}(score))$. 
+
+A wider connection with an alternative indicates that the effect of variable replacement by the alternative could be less severe.
 
 
 ```r
 plot(alt1, fontSize = 20)
 ```
-
-<!--html_preserve--><div id="htmlwidget-dd46050412b8de106cc0" style="width:672px;height:480px;" class="sankeyNetwork html-widget"></div>
-<script type="application/json" data-for="htmlwidget-dd46050412b8de106cc0">{"x":{"links":{"source":[0,0,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6,7,7,7,7],"target":[8,9,8,8,10,11,9,8,10,11,9,8,10,11,9,8,10,11,9,8,9,8,10,11,9],"value":[3.45379568060442,3.49495452656465,4.10482590753442,2.79731347124814,2.5890376540387,2.48300316096832,2.67916527013561,1.36413252912561,1.31211148258727,1.30165435227959,1.33218073575504,2.12611271357815,2.1847536725827,2.15496646440805,2.10268664331173,1.80689364520621,1.75573143608361,1.77054718615441,1.83541737174951,2.66761589712431,2.68863707356127,1.30269346098149,1.27085550161875,1.18777296027801,1.25952010512974],"group":["crim","crim","zn","nox","nox","nox","nox","rm","rm","rm","rm","dis","dis","dis","dis","ptratio","ptratio","ptratio","ptratio","black","black","lstat","lstat","lstat","lstat"]},"nodes":{"name":["crim","zn","nox","rm","dis","ptratio","black","lstat","indus","tax","age","rad"],"group":["crim","zn","nox","rm","dis","ptratio","black","lstat","indus","tax","age","rad"]},"options":{"NodeID":"name","NodeGroup":"name","LinkGroup":"feature","colourScale":"d3.scaleOrdinal(d3.schemeCategory20);","fontSize":20,"fontFamily":null,"nodeWidth":15,"nodePadding":10,"units":"","margin":{"top":null,"right":null,"bottom":null,"left":null},"iterations":32,"sinksRight":true}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+![](./img/sankeyflow.png)
 
