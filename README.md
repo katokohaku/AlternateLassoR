@@ -10,6 +10,9 @@ an implementation to R-package of for the alternate features search proposed in 
 
 * Complete and original Python code is available from [author's github](https://github.com/sato9hara/LassoVariants)
 
+also introduction slide in Japanese:
+
+* [Introduction of "the alternate features search" using R](https://www.slideshare.net/kato_kohaku/introduction-alternate-featuresinlassor-71186764)
 
 ```r
 # fit Alternate Lasso model
